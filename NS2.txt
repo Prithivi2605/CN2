@@ -1,0 +1,113 @@
+TCP
+
+# Create a simulator instance
+set ns [new Simulator]
+
+# Open NAM and Trace files
+set namf [open wired2.nam w]
+$ns namtrace-all $namf
+
+set tracef [open wired2.tr w]
+$ns trace-all $tracef
+
+# Create nodes
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+# Create links
+$ns duplex-link $n0 $n1 2Mb 1ms DropTail
+$ns duplex-link $n1 $n2 2.5Mb 1ms RED
+$ns duplex-link $n2 $n3 2Mb 1.5ms DropTail
+$ns duplex-link $n3 $n1 12Mb 10ms DropTail
+
+# Create TCP agent and sink
+set tcp [new Agent/TCP]
+set sink [new Agent/TCPSink]
+
+$ns attach-agent $n0 $tcp
+$ns attach-agent $n2 $sink
+
+$ns connect $tcp $sink
+
+# Attach FTP to TCP agent
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+
+# Schedule events
+$ns at 1.0 "$ftp start"
+$ns at 3.0 "finish"
+
+# Finish procedure
+proc finish {} {
+    global ns namf tracef
+    $ns flush-trace
+    close $namf
+    close $tracef
+    exec nam wired2.nam &
+    exit 0
+}
+
+# Run the simulation
+$ns run
+
+
+
+
+
+UDP
+
+# Create a simulator instance
+set ns [new Simulator]
+
+# Open NAM and Trace files
+set namf [open wired_udp.nam w]
+$ns namtrace-all $namf
+
+set tracef [open wired_udp.tr w]
+$ns trace-all $tracef
+
+# Create nodes
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+# Create links
+$ns duplex-link $n0 $n1 2Mb 1ms DropTail
+$ns duplex-link $n1 $n2 2.5Mb 1ms RED
+$ns duplex-link $n2 $n3 2Mb 1.5ms DropTail
+$ns duplex-link $n3 $n1 12Mb 10ms DropTail
+
+# Setup UDP agent and Null sink
+set udp [new Agent/UDP]
+set null [new Agent/Null]
+
+$ns attach-agent $n0 $udp
+$ns attach-agent $n2 $null
+
+$ns connect $udp $null
+
+# Setup CBR traffic
+set cbr [new Application/Traffic/CBR]
+$cbr set packetSize_ 500
+$cbr set interval_ 0.01
+$cbr attach-agent $udp
+
+# Schedule events
+$ns at 1.0 "$cbr start"
+$ns at 3.0 "finish"
+
+# Finish procedure
+proc finish {} {
+    global ns namf tracef
+    $ns flush-trace
+    close $namf
+    close $tracef
+    exec nam wired_udp.nam &
+    exit 0
+}
+
+# Run the simulation
+$ns run
